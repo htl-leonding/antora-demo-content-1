@@ -19,8 +19,7 @@ icon:github-square[link=https://github.com/htl-leonding-college/asciidoctor-dock
 icon:home[link=https://htl-leonding.github.io/]
 endif::backend-html5[]
 
-// print the toc here (not at the default position)
-toc::[]
+
 
 == Prerequisites - What students have to prepare
 
