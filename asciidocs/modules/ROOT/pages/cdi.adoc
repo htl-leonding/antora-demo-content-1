@@ -1,3 +1,4 @@
+:page-partial:
 == CDI - Context and Dependency Injection
 
 -> https://quarkus.io/guides/cdi

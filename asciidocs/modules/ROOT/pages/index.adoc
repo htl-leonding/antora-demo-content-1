@@ -6,8 +6,6 @@ ifndef::imagesdir[:imagesdir: images]
 :sourcedir: ../src/main/java
 :icons: font
 :sectnums:    // Nummerierung der Überschriften / section numbering
-:toc: left
-:toclevels: 5
 
 // https://mrhaki.blogspot.com/2014/06/awesome-asciidoc-use-link-attributes.html
 :linkattrs:

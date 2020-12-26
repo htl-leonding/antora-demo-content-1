@@ -1,3 +1,4 @@
+:page-partial:
 == REST with Entities
 
 === Create the Vehicle Project

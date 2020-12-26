@@ -1,3 +1,4 @@
+:page-partial:
 == Persistence / JPA
 
 === How to start a PostgreSQL DB in Docker
