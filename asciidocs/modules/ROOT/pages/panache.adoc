@@ -1,0 +1,11 @@
+== Persistence with Panache
+
+
+* http://edufs.edu.htl-leonding.ac.at/~t.stuetz/download/nvs/presentations.2021/08_Panache.pdf[Panache, window="_blank"] (Skriptum von Gerald Aistleitner)
+* https://quarkus.io/guides/hibernate-orm-panache[Quarkus - Simplified Hibernate ORM with Panache, window="_blank"] (Quarkus Guide)
+* https://dzone.com/articles/creating-a-microservice-with-quarkus-kotlin-and-gr[Creating a Microservice With Quarkus, Kotlin, and Gradle]
+
+
+
+
+

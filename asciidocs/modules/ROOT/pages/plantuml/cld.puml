@@ -1,0 +1,23 @@
+@startuml
+class Vehicle {
+- brand: String
+- model: String
+- pricePerDay: double
+}
+
+class Customer {
+- name: String
+- dob: LocalDate
+}
+
+class Rental {
+- vehicle: Vehicle
+- customer: Customer
+- startDate: LocalDate
+- endDate: LocalDate
+- discount: double
+}
+
+Vehicle "1" <-left- "*" Rental : is rented >
+Rental "*" -right-> "1" Customer : < rents
+@enduml

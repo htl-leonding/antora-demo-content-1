@@ -1,0 +1,81 @@
+= Assignment 03 - JPA
+Thomas W. Stütz
+1.0.0, 2020-11-23: Java Persistence API
+ifndef::imagesdir[:imagesdir: images]
+:sourcedir: ../src/main/java
+:icons: font
+:sectnums:    // Nummerierung der Überschriften / section numbering
+:toc: left
+:toclevels: 5
+:linkattrs:
+
+
+== Instructions
+
+* Continue your microproject.
+* Classroom-Assignment: `assignment03-jpa-karate`
+
+===  Preconditions
+
+* Install a plantuml-plugin
+** https://plugins.jetbrains.com/plugin/7017-plantuml-integration
+* Install a Asciidoctor-Plugin
+
+
+=== Task
+
+* Verwenden Sie die bereits erstellten Entitäten in Ihrem Miniprojekt
+* Achten Sie dabei auf eine korrekte Definition der Beziehungen
+* Erstellen Sie ein UCD mit 3 datenbankbasierten Use-Case (plantuml)
+* Implementieren Sie die geeigneten REST-Resourcen, um diese Use-Cases testen zu können.
+* Achten Sie auf geeignete Commits
+* Benennen Sie die Tabelle und die Spalten entsprechend
+* ....
+
+https://www.objectdb.com/java/jpa/query/named
+
+* Use the existing classes in your mini-project.
+* Pay attention to the correct dependencies between the classes.
+* Create a use-case-diagram with at least three use-cases (plantuml) using a database.
+* Implement appropriate REST-Endpoints for these use-cases.
+** Create queries for the detail-data (Bewegungsdaten) not only for master-data (Stammdaten)
+** Tips for implementing queries: https://www.objectdb.com/java/jpa/query/named
+* For naming the database-tables and -columns use snake case with prefixes.
+
+image:master-data-detail-data.png[,800]
+
+
+=== Create Tests for the Entities, Repositories and User Stories
+
+* Make unit-tests for the entities
+** test the methods ie the toString()-method.
+** you don't have to test the generated getters and setters.
+** You should test the dependencies, after creating instances.
+** ...
+
+* Create integration-tests for the repositories
+** use assertj-core
+
+* Create system-tests for the endpoints (restful resources)
+** use Karate for use-case based tests
+** for each use-case create some szenarios (default usage, failures, ...)
+
+=== Create a swagger-ui for your Endpoints
+
+* Document the three user stories for swagger in the source code
+
+=== README.md
+
+* In the README.md should be a short explanation of the topic and the use-cases.
+* The  use-case-diagram
+* The class-diagram
+
+== What to pay attention for ...
+
+* The project should be clean
+** the quarkus-project is located int the root of the git repo
+** the commits are usable for following the development of the microproject
+
+== gh-pages
+
+https://htl-leonding-college.github.io/quarkus-lecture-notes/assignment03-jpa.html

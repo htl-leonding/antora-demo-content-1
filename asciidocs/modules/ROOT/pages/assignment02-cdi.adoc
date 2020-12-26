@@ -1,0 +1,113 @@
+= Assignment 02 - CDI
+Thomas W. Stütz
+1.0.0, 2020-10-30: Context & Dependency Injection
+ifndef::imagesdir[:imagesdir: images]
+:sourcedir: ../src/main/java
+:icons: font
+:sectnums:    // Nummerierung der Überschriften / section numbering
+:toc: left
+:toclevels: 5
+:linkattrs:
+
+
+== Instructions
+
+Continue your microproject:
+
+=== Create a new Quarkus Project in the given github-Repository
+
+* Transfer the sources of the old project to the new gh-repository
+* The new project is supposed to be "clean"
+** The project root is located in the gh-repo root
+
+=== Create (ie) three Entities
+
+=== Install a plantuml-plugin
+
+* https://plugins.jetbrains.com/plugin/7017-plantuml-integration
+
+
+=== Create a plantuml-class-diagram
+
+* Create a `plantuml` - directory in your `asciidoc` - folder
+* right Mouseclick on the plantuml-folder and choose "New"-"PlantUML File"
+** Name the file `cld`
+** Choose "class"
+* a cld.puml file is created
+
+.structure of the asciidoc-folder
+----
+|-- images
+|   `-- ...
+|-- index.adoc
+|-- ...
+`-- plantuml
+    `-- cld.puml
+----
+
+=== Design your Class Diagram
+
+=== Include the cld into your asciidoc-file
+
+****
+image:include-puml-file.png[]
+****
+
+.a example for the rendered puml-file
+[plantuml, cld, png, align=left]
+----
+include::plantuml/cld.puml[]
+----
+
+=== Include the Class Diagram into your README.md
+
+* Copy the generated png-file into the image-folder in your project
+* Include the png into the README.png
+* Describe in your README.md
+** What is the idea of your microproject
+** What are you implementing
+*** Use-Case-Diagram
+*** Class-Diagram
+
+=== Create the Repositories for the Entities
+
+* The data is stored in collections.
+We are still using *no* databases.
+
+* Use cdi for injecting the repositories
+
+=== Identify three User Stories
+
+* Create a ucd.puml for the use-case-diagram
+
+IMPORTANT: These use-cases are the foundation for crud-operations and queries and also for the system-tests.
+
+=== Create Endpoints for your User Stories
+
+* Use cdi for injecting the repositories
+
+=== Create Tests for the Entities, Repositories and User Stories
+
+* Make unit-tests for the entities
+** test the methods ie the toString()-method
+** ...
+
+* Create integration-tests for the repositories
+** use assertj-core
+
+* Create system-tests for the endpoints (restful resources)
+** use RESTassured
+
+=== Create a swagger-ui for your Endpoints
+
+* Document the three user stories for swagger in the source code
+
+== What to pay attention for ...
+
+* The project should be clean
+** the quarkus-project is located in the root of the git repo
+** the commits are usable for following the development of the microproject
+
+== gh-pages
+
+https://htl-leonding-college.github.io/quarkus-lecture-notes/assignment02-cdi.html

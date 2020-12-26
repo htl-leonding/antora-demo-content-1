@@ -1,0 +1,266 @@
+== Deploy Native Application to Google Cloud Platform
+
+.Install Google CLI on MacOS
+[source,bash]
+----
+brew tap caskroom/cask
+brew cask install google-cloud-sdk
+----
+
+For other OS: https://cloud.google.com/sdk/docs/quickstarts?hl=de[Install Google Cloud SDK]
+
+
+[source,bash]
+----
+gcloud init
+----
+
+.terminal output
+[%collapsible]
+====
+----
+Welcome! This command will take you through the configuration of gcloud.
+
+Your current configuration has been set to: [default]
+
+You can skip diagnostics next time by using the following flag:
+  gcloud init --skip-diagnostics
+
+Network diagnostic detects and fixes local network connection issues.
+Checking network connection...done.
+Reachability Check passed.
+Network diagnostic passed (1/1 checks passed).
+
+You must log in to continue. Would you like to log in (Y/n)?
+
+Your browser has been opened to visit:
+
+    https://accounts.google.com/o/oauth2/auth?client_id=...&access_type=offline&response_type=code&prompt=select_account
+
+
+You are logged in as: [xxxx@gmail.com].
+
+Pick cloud project to use:
+ [1] yyyy
+ [2] Create a new project
+Please enter numeric choice or text value (must exactly match list
+item):  2
+
+Enter a Project ID. Note that a Project ID CANNOT be changed later.
+Project IDs must be 6-30 characters (lowercase ASCII, digits, or
+hyphens) in length and start with a lowercase letter. htl-leonding
+Waiting for [operations/cp.xxx] to finish...done.
+Your current project has been set to: [htl-leonding].
+Not setting default zone/region (this feature makes it easier to use
+[gcloud compute] by setting an appropriate default value for the
+--zone and --region flag).
+See https://cloud.google.com/compute/docs/gcloud-compute section on how to set
+default compute region and zone manually. If you would like [gcloud init] to be
+able to do this for you the next time you run it, make sure the
+Compute Engine API is enabled for your project on the
+https://console.developers.google.com/apis page.
+
+Created a default .boto configuration file at [/Users/xxx/.boto]. See this file and
+[https://cloud.google.com/storage/docs/gsutil/commands/config] for more
+information about configuring Google Cloud Storage.
+Your Google Cloud SDK is configured and ready to use!
+
+* Commands that require authentication will use xxx@gmail.com by default
+* Commands will reference project `htl-leonding` by default
+Run `gcloud help config` to learn how to change individual settings
+
+This gcloud configuration is called [default]. You can create additional configurations if you work with multiple accounts and/or projects.
+Run `gcloud topic configurations` to learn more.
+
+Some things to try next:
+
+* Run `gcloud --help` to see the Cloud Platform services you can interact with. And run `gcloud help COMMAND` to get help on any gcloud command.
+* Run `gcloud topic --help` to learn about advanced features of the SDK like arg files and output formatting
+----
+====
+
+
+image:k8s-google-project-dashboard.png[]
+
+
+[source,bash]
+----
+gcloud auth configure-docker
+----
+
+.terminal output
+[%collapsible]
+====
+----
+Adding credentials for all GCR repositories.
+WARNING: A long list of credential helpers may cause delays running 'docker build'. We recommend passing the registry name to configure only the registry you are using.
+After update, the following will be written to your Docker config file
+ located at [/Users/stuetz/.docker/config.json]:
+ {
+  "credHelpers": {
+    "gcr.io": "gcloud",
+    "us.gcr.io": "gcloud",
+    "eu.gcr.io": "gcloud",
+    "asia.gcr.io": "gcloud",
+    "staging-k8s.gcr.io": "gcloud",
+    "marketplace.gcr.io": "gcloud"
+  }
+}
+
+Do you want to continue (Y/n)?
+
+Docker configuration file updated.
+----
+====
+
+image:k8s-google-image-group.png[]
+
+
+.application.properties
+[source,properties]
+----
+quarkus.kubernetes.image-pull-policy=ifNotPresent
+quarkus.kubernetes.replicas=3
+quarkus.kubernetes.env-vars.test.value=test
+quarkus.kubernetes.env-vars.key.value=value
+quarkus.container-image.registry=eu.gcr.io
+quarkus.container-image.group=htl-leonding
+----
+
+
+[source,bash]
+----
+./mvnw clean package -Dquarkus.container-image.build=true -Dquarkus.container-image.push=true
+----
+
+[%collapsible]
+====
+----
+[INFO] Scanning for projects...
+[INFO]
+[INFO] ---------------------< at.htl:quarkus-kubernetes >----------------------
+[INFO] Building quarkus-kubernetes 1.0-SNAPSHOT
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO]
+[INFO] --- maven-clean-plugin:2.5:clean (default-clean) @ quarkus-kubernetes ---
+[INFO] Deleting /Users/stuetz/SynologyDrive/htl/skripten/themen/jakartaee-microprofile/quarkus-lecture-notes/labs/700-kubernetes/quarkus-kubernetes/target
+[INFO]
+[INFO] --- quarkus-maven-plugin:1.7.1.Final:prepare (default) @ quarkus-kubernetes ---
+[INFO]
+[INFO] --- maven-resources-plugin:2.6:resources (default-resources) @ quarkus-kubernetes ---
+[INFO] Using 'UTF-8' encoding to copy filtered resources.
+[INFO] Copying 2 resources
+[INFO]
+[INFO] --- maven-compiler-plugin:3.8.1:compile (default-compile) @ quarkus-kubernetes ---
+[INFO] Changes detected - recompiling the module!
+[INFO] Compiling 1 source file to /Users/stuetz/SynologyDrive/htl/skripten/themen/jakartaee-microprofile/quarkus-lecture-notes/labs/700-kubernetes/quarkus-kubernetes/target/classes
+[INFO]
+[INFO] --- quarkus-maven-plugin:1.7.1.Final:prepare-tests (default) @ quarkus-kubernetes ---
+[INFO]
+[INFO] --- maven-resources-plugin:2.6:testResources (default-testResources) @ quarkus-kubernetes ---
+[INFO] Using 'UTF-8' encoding to copy filtered resources.
+[INFO] skip non existing resourceDirectory /Users/stuetz/SynologyDrive/htl/skripten/themen/jakartaee-microprofile/quarkus-lecture-notes/labs/700-kubernetes/quarkus-kubernetes/src/test/resources
+[INFO]
+[INFO] --- maven-compiler-plugin:3.8.1:testCompile (default-testCompile) @ quarkus-kubernetes ---
+[INFO] Changes detected - recompiling the module!
+[INFO] Compiling 2 source files to /Users/stuetz/SynologyDrive/htl/skripten/themen/jakartaee-microprofile/quarkus-lecture-notes/labs/700-kubernetes/quarkus-kubernetes/target/test-classes
+[INFO]
+[INFO] --- maven-surefire-plugin:3.0.0-M5:test (default-test) @ quarkus-kubernetes ---
+[INFO]
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running at.htl.WeatherResourceTest
+2020-09-03 10:29:12,119 WARN  [io.qua.config] (main) Unrecognized configuration key "quarkus.container-immage.push" was provided; it will be ignored; verify that the dependency extension for this configuration is set or you did not make a typo
+2020-09-03 10:29:12,486 INFO  [io.quarkus] (main) Quarkus 1.7.1.Final on JVM started in 1.396s. Listening on: http://0.0.0.0:8081
+2020-09-03 10:29:12,487 INFO  [io.quarkus] (main) Profile test activated.
+2020-09-03 10:29:12,487 INFO  [io.quarkus] (main) Installed features: [cdi, kubernetes, resteasy]
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 4.157 s - in at.htl.WeatherResourceTest
+2020-09-03 10:29:13,621 INFO  [io.quarkus] (main) Quarkus stopped in 0.025s
+[INFO]
+[INFO] Results:
+[INFO]
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0
+[INFO]
+[INFO]
+[INFO] --- maven-jar-plugin:2.4:jar (default-jar) @ quarkus-kubernetes ---
+[INFO] Building jar: /Users/stuetz/SynologyDrive/htl/skripten/themen/jakartaee-microprofile/quarkus-lecture-notes/labs/700-kubernetes/quarkus-kubernetes/target/quarkus-kubernetes-1.0-SNAPSHOT.jar
+[INFO]
+[INFO] --- quarkus-maven-plugin:1.7.1.Final:build (default) @ quarkus-kubernetes ---
+[INFO] [org.jboss.threads] JBoss Threads version 3.1.1.Final
+[INFO] [io.quarkus.deployment.pkg.steps.JarResultBuildStep] Building thin jar: /Users/stuetz/SynologyDrive/htl/skripten/themen/jakartaee-microprofile/quarkus-lecture-notes/labs/700-kubernetes/quarkus-kubernetes/target/quarkus-kubernetes-1.0-SNAPSHOT-runner.jar
+[INFO] Checking for existing resources in: /Users/stuetz/SynologyDrive/htl/skripten/themen/jakartaee-microprofile/quarkus-lecture-notes/labs/700-kubernetes/quarkus-kubernetes/src/main/kubernetes.
+[INFO] [io.quarkus.container.image.docker.deployment.DockerWorking] Docker daemon found. Version:'19.03.12'
+[INFO] [io.quarkus.container.image.docker.deployment.DockerProcessor] Building docker image for jar.
+[INFO] [io.quarkus.container.image.docker.deployment.DockerProcessor] Executing the following command to build docker image: 'docker build -f /Users/stuetz/SynologyDrive/htl/skripten/themen/jakartaee-microprofile/quarkus-lecture-notes/labs/700-kubernetes/quarkus-kubernetes/src/main/docker/Dockerfile.jvm -t eu.gcr.io/htl-leonding/quarkus-kubernetes:1.0-SNAPSHOT /Users/stuetz/SynologyDrive/htl/skripten/themen/jakartaee-microprofile/quarkus-lecture-notes/labs/700-kubernetes/quarkus-kubernetes'
+[INFO] [io.quarkus.container.image.docker.deployment.DockerProcessor] Sending build context to Docker daemon  11.06MB
+[INFO] [io.quarkus.container.image.docker.deployment.DockerProcessor]
+[INFO] [io.quarkus.container.image.docker.deployment.DockerProcessor] Step 1/11 : FROM registry.access.redhat.com/ubi8/ubi-minimal:8.1
+[INFO] [io.quarkus.container.image.docker.deployment.DockerProcessor]  ---> 91d23a64fdf2
+[INFO] [io.quarkus.container.image.docker.deployment.DockerProcessor] Step 2/11 : ARG JAVA_PACKAGE=java-11-openjdk-headless
+[INFO] [io.quarkus.container.image.docker.deployment.DockerProcessor]  ---> Using cache
+[INFO] [io.quarkus.container.image.docker.deployment.DockerProcessor]  ---> 8fc4f17150bc
+[INFO] [io.quarkus.container.image.docker.deployment.DockerProcessor] Step 3/11 : ARG RUN_JAVA_VERSION=1.3.8
+[INFO] [io.quarkus.container.image.docker.deployment.DockerProcessor]  ---> Using cache
+[INFO] [io.quarkus.container.image.docker.deployment.DockerProcessor]  ---> a000ba49f0d3
+[INFO] [io.quarkus.container.image.docker.deployment.DockerProcessor] Step 4/11 : ENV LANG='en_US.UTF-8' LANGUAGE='en_US:en'
+[INFO] [io.quarkus.container.image.docker.deployment.DockerProcessor]  ---> Using cache
+[INFO] [io.quarkus.container.image.docker.deployment.DockerProcessor]  ---> d1073cdf5cee
+[INFO] [io.quarkus.container.image.docker.deployment.DockerProcessor] Step 5/11 : RUN microdnf install curl ca-certificates ${JAVA_PACKAGE}     && microdnf update     && microdnf clean all     && mkdir /deployments     && chown 1001 /deployments     && chmod "g+rwX" /deployments     && chown 1001:root /deployments     && curl https://repo1.maven.org/maven2/io/fabric8/run-java-sh/${RUN_JAVA_VERSION}/run-java-sh-${RUN_JAVA_VERSION}-sh.sh -o /deployments/run-java.sh     && chown 1001 /deployments/run-java.sh     && chmod 540 /deployments/run-java.sh     && echo "securerandom.source=file:/dev/urandom" >> /etc/alternatives/jre/lib/security/java.security
+[INFO] [io.quarkus.container.image.docker.deployment.DockerProcessor]  ---> Using cache
+[INFO] [io.quarkus.container.image.docker.deployment.DockerProcessor]  ---> 648f605d38e4
+[INFO] [io.quarkus.container.image.docker.deployment.DockerProcessor] Step 6/11 : ENV JAVA_OPTIONS="-Dquarkus.http.host=0.0.0.0 -Djava.util.logging.manager=org.jboss.logmanager.LogManager"
+[INFO] [io.quarkus.container.image.docker.deployment.DockerProcessor]  ---> Using cache
+[INFO] [io.quarkus.container.image.docker.deployment.DockerProcessor]  ---> 6e361144ebc9
+[INFO] [io.quarkus.container.image.docker.deployment.DockerProcessor] Step 7/11 : COPY target/lib/* /deployments/lib/
+[INFO] [io.quarkus.container.image.docker.deployment.DockerProcessor]  ---> Using cache
+[INFO] [io.quarkus.container.image.docker.deployment.DockerProcessor]  ---> aa3b5e7c32cc
+[INFO] [io.quarkus.container.image.docker.deployment.DockerProcessor] Step 8/11 : COPY target/*-runner.jar /deployments/app.jar
+[INFO] [io.quarkus.container.image.docker.deployment.DockerProcessor]  ---> 02770dc30f15
+[INFO] [io.quarkus.container.image.docker.deployment.DockerProcessor] Step 9/11 : EXPOSE 8080
+[INFO] [io.quarkus.container.image.docker.deployment.DockerProcessor]  ---> Running in 733e602ed9eb
+[INFO] [io.quarkus.container.image.docker.deployment.DockerProcessor] Removing intermediate container 733e602ed9eb
+[INFO] [io.quarkus.container.image.docker.deployment.DockerProcessor]  ---> 8ff52ba6d58c
+[INFO] [io.quarkus.container.image.docker.deployment.DockerProcessor] Step 10/11 : USER 1001
+[INFO] [io.quarkus.container.image.docker.deployment.DockerProcessor]  ---> Running in 6e31d9e5a012
+[INFO] [io.quarkus.container.image.docker.deployment.DockerProcessor] Removing intermediate container 6e31d9e5a012
+[INFO] [io.quarkus.container.image.docker.deployment.DockerProcessor]  ---> 8a31034a1e8e
+[INFO] [io.quarkus.container.image.docker.deployment.DockerProcessor] Step 11/11 : ENTRYPOINT [ "/deployments/run-java.sh" ]
+[INFO] [io.quarkus.container.image.docker.deployment.DockerProcessor]  ---> Running in f6aa6b4e5857
+[INFO] [io.quarkus.container.image.docker.deployment.DockerProcessor] Removing intermediate container f6aa6b4e5857
+[INFO] [io.quarkus.container.image.docker.deployment.DockerProcessor]  ---> 5043dcf382db
+[INFO] [io.quarkus.container.image.docker.deployment.DockerProcessor] Successfully built 5043dcf382db
+[INFO] [io.quarkus.container.image.docker.deployment.DockerProcessor] Successfully tagged eu.gcr.io/htl-leonding/quarkus-kubernetes:1.0-SNAPSHOT
+[INFO] [io.quarkus.container.image.docker.deployment.DockerProcessor] Built container image eu.gcr.io/htl-leonding/quarkus-kubernetes:1.0-SNAPSHOT (5043dcf382db)
+
+[INFO] [io.quarkus.deployment.QuarkusAugmentor] Quarkus augmentation completed in 6532ms
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  15.510 s
+[INFO] Finished at: 2020-09-03T10:29:20+02:00
+[INFO] ------------------------------------------------------------------------
+----
+====
+
+.because the billing is not activated: "BUILD FAILURE: enable Google Container Registry API in Cloud Console"
+----
+[INFO] [io.quarkus.deployment.util.ExecUtil] The push refers to repository [eu.gcr.io/htl-leonding/quarkus-kubernetes]
+[INFO] [io.quarkus.deployment.util.ExecUtil] c45617c2d13f: Preparing
+[INFO] [io.quarkus.deployment.util.ExecUtil] cb99b9326055: Preparing
+[INFO] [io.quarkus.deployment.util.ExecUtil] ee6f95ea7152: Preparing
+[INFO] [io.quarkus.deployment.util.ExecUtil] eddba477a8ae: Preparing
+[INFO] [io.quarkus.deployment.util.ExecUtil] f80c95f61fff: Preparing
+[INFO] [io.quarkus.deployment.util.ExecUtil] denied: Token exchange failed for project 'htl-leonding'. Please enable Google Container Registry API in Cloud Console at https://console.cloud.google.com/apis/api/containerregistry.googleapis.com/overview?project=htl-leonding before performing this operation.
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  16.109 s
+[INFO] Finished at: 2020-09-03T10:35:43+02:00
+[INFO] ------------------------------------------------------------------------
+----
+
+
+
+
+

@@ -1,0 +1,237 @@
+== Deploy Applications to IBM Cloud
+
+.Source:
+* https://haralduebele.blog/tag/quarkus/[Deploy your Quarkus applications on Kubernetes. Almost automatically!, window="_blank"]
+* https://cloud.ibm.com/docs/Registry?topic=Registry-registry_overview#registry_regions[IBM Cloud Registry locations, window="_blank"]
+
+=== Create a Quarkus Project
+
+[source,bash]
+----
+mvn io.quarkus:quarkus-maven-plugin:1.7.2.Final:create \
+    -DprojectGroupId=at.htl \
+    -DprojectArtifactId=config-quickstart \
+    -DclassName="at.htl.config.GreetingResource" \
+    -Dpath="/greeting"
+cd config-quickstart
+idea .
+----
+
+.open a terminal
+[source,bash]
+----
+./mvnw clean compile quarkus:dev
+----
+
+.cURL
+[source,bash]
+----
+curl -w "\n" http://localhost:8080/greeting
+----
+
+----
+hello
+----
+
+.httpie
+[source,bash]
+----
+http :8080/greeting
+----
+
+----
+HTTP/1.1 200 OK
+Content-Length: 5
+Content-Type: text/plain;charset=UTF-8
+
+hello
+----
+
+
+
+[source,bash]
+----
+./mvnw quarkus:add-extension -Dextensions="kubernetes, container-image-docker"
+----
+
+----
+[INFO] Scanning for projects...
+[INFO]
+[INFO] ----------------------< at.htl:config-quickstart >----------------------
+[INFO] Building config-quickstart 1.0-SNAPSHOT
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO]
+[INFO] --- quarkus-maven-plugin:1.7.2.Final:add-extension (default-cli) @ config-quickstart ---
+? Extension io.quarkus:quarkus-kubernetes has been installed
+? Extension io.quarkus:quarkus-container-image-docker has been installed
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  1.227 s
+[INFO] Finished at: 2020-09-07T11:21:40+02:00
+[INFO] ------------------------------------------------------------------------
+----
+
+=== Package the Application
+
+.application.properties
+[source,properties]
+----
+quarkus.kubernetes.part-of=todo-app
+quarkus.container-image.name=getting-started
+quarkus.container-image.tag=1.0
+quarkus.container-image.registry=
+quarkus.container-image.group=
+quarkus.kubernetes.service-type=NodePort # <.>
+----
+
+<.> The default value `ClusterIP` is not working with minikube.
+
+[source,bash]
+----
+./mvnw clean package
+----
+
+* There should be a BUILD SUCCESS.
+* Examine the `target/kubernetes/kubernetes.yml` - file.
+* Notice the `Service`- and `Deployment`-Sections in the yml-file.
+
+
+=== Deploy to minikube
+
+[source,properties]
+----
+quarkus.kubernetes.part-of=todo-app
+quarkus.container-image.name=getting-started
+quarkus.container-image.tag=1.0
+quarkus.container-image.registry=
+quarkus.container-image.group=
+quarkus.kubernetes.image-pull-policy=never
+quarkus.kubernetes.service-type=NodePort
+----
+
+
+[source,bash]
+----
+./mvnw clean package -Dquarkus.kubernetes.deploy=true
+----
+
+----
+[INFO] [io.quarkus.kubernetes.deployment.KubernetesDeployer] Deploying to kubernetes server: https://127.0.0.1:32772/ in namespace: default.
+----
+
+
+[source,bash]
+----
+kubectl get pod
+kubectl get deploy
+kubectl get svc
+----
+
+* Hier sieht man den Port des Nodeport
+
+[source,bash]
+----
+minikube ip
+----
+
+* Mit `minikube ip` kann man die Ip von minikube abrufen
+
+[source,bash]
+----
+curl <ip-von-minikube>/<port-von-nodeport>/greeting
+----
+
+* This didn't work under MacOS.
+* In this case you have to open a https://minikube.sigs.k8s.io/docs/handbook/accessing/[tunnel] with `minikube`.
+
+[source,bash]
+----
+minikube service getting-started
+----
+
+.terminal output
+----
+|-----------|-----------------|-------------|-------------------------|
+| NAMESPACE |      NAME       | TARGET PORT |           URL           |
+|-----------|-----------------|-------------|-------------------------|
+| default   | getting-started | http/8080   | http://172.17.0.4:31908 |
+|-----------|-----------------|-------------|-------------------------|
+🏃  Starting tunnel for service getting-started.
+|-----------|-----------------|-------------|------------------------|
+| NAMESPACE |      NAME       | TARGET PORT |          URL           |
+|-----------|-----------------|-------------|------------------------|
+| default   | getting-started |             | http://127.0.0.1:57075 |
+|-----------|-----------------|-------------|------------------------|
+🎉  Opening service default/getting-started in default browser...
+❗  Because you are using a Docker driver on darwin, the terminal needs to be open to run it.
+----
+
+* The browser opens and show the webpage
+* add /greeting to the url and it works
+* with ` minikube service getting-started --url` you only print out the url.
+* don't forget NOT to close the terminal, because it would close the tunnel too.
+
+=== IBM Cloud Internet Services
+
+* First https://cloud.ibm.com/registration[sign up] for a cloud account. Choose the type "lite".
+* Install the ibm-cloud-cli
+** on macos: don't use brew -  there are problems when docker is already installed
+** on all OS use the https://github.com/IBM-Cloud/ibm-cloud-cli-release/releases/[installer] or the https://cloud.ibm.com/docs/cli?topic=cli-install-ibmcloud-cli[shell]
+
+
+.Login and install https://cloud.ibm.com/docs/containers?topic=containers-cs_cli_install#cs_cli_install_steps[plugins]
+[source,bash]
+----
+ibmcloud login
+ibmcloud plugin install container-service
+ibmcloud plugin install container-registry
+ibmcloud plugin install observe-service
+ibmcloud plugin list
+----
+
+
+[source,bash]
+----
+
+----
+
+
+
+[source,bash]
+----
+
+----
+
+
+[source,bash]
+----
+
+----
+
+
+
+[source,bash]
+----
+
+----
+
+
+[source,bash]
+----
+
+----
+
+
+
+[source,bash]
+----
+
+----
+
+
+[source,bash]
+----
+
+----
+

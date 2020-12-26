@@ -1,0 +1,6 @@
+name: quarkus-lecture-notes
+title: Quarkus Lecture Notes
+version: 1.0
+start_page: ROOT:index.adoc
+nav:
+  - modules/ROOT/nav.adoc

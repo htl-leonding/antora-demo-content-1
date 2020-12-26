@@ -1,0 +1,34 @@
+https://eclipse-ee4j.github.io/jakartaee-tutorial/toc.html[The Jakarta EE 8 Tutorial]
+
+https://jakarta.ee/specifications/
+https://jakarta.ee/specifications/platform/8/
+
+http://www.eclipse.org/community/eclipse_newsletter/2019/november/2.php
+
+https://itnext.io/faster-lower-better-with-quarkus-in-k8s-83185af46f36[Faster, Lower, Better with Quarkus in k8s]
+
+.REST assured with AssertJ
+* https://phauer.com/2016/testing-restful-services-java-best-practices/[Philipp Hauer - Testing RESTful Services in Java: Best Practices]
+* https://medium.com/siili-automotive/5-tips-to-take-your-api-testing-with-rest-assured-on-the-higher-level-84a98897a45a[5 tips to take your API testing with REST Assured on the higher level]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

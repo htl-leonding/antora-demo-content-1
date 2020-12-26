@@ -1,0 +1,226 @@
+= Quarkus Lecture Notes
+Thomas W. Stütz
+0.5.0, 2020-06-28: JakartaEE, microprofile & Quarkus
+ifndef::imagesdir[:imagesdir: images]
+//:toc-placement!:  // prevents the generation of the doc at this position, so it can be printed afterwards
+:sourcedir: ../src/main/java
+:icons: font
+:sectnums:    // Nummerierung der Überschriften / section numbering
+:toc: left
+:toclevels: 5
+
+// https://mrhaki.blogspot.com/2014/06/awesome-asciidoc-use-link-attributes.html
+:linkattrs:
+
+//Need this blank line after ifdef, don't know why...
+ifdef::backend-html5[]
+
+// https://fontawesome.com/v4.7.0/icons/
+icon:file-text-o[link=https://raw.githubusercontent.com/htl-leonding-college/asciidoctor-docker-template/master/asciidocs/{docname}.adoc] ‏ ‏ ‎
+icon:github-square[link=https://github.com/htl-leonding-college/asciidoctor-docker-template] ‏ ‏ ‎
+icon:home[link=https://htl-leonding.github.io/]
+endif::backend-html5[]
+
+// print the toc here (not at the default position)
+toc::[]
+
+== Prerequisites - What students have to prepare
+
+* OS for developing
+* up-to-date JDK installed (AdoptOpenJDK - Hotspot)
+** Windows: https://adoptopenjdk.net/
+** MacOS: https://formulae.brew.sh/cask/adoptopenjdk
+** Linux: https://adoptopenjdk.net/installation.html
+* JDK checked - has to run in a shell
+** Windows: https://www.ibm.com/support/knowledgecenter/en/SS88XH_1.6.0/iva/install_mils_windows_java.html
+** MacOS: http://widerin.net/blog/set-java_home-to-latest-java-on-osx/
+** Linux: in a shell
+*** `java -version`
+*** `javac -version`
+*** `echo $JAVA_HOME`
+* Docker locally installed
+* up-to-date DerbyDB downloaded and extracted in i.e. `/opt/db-derby-10.15.2.0-bin`
+* eventually: Minikube
+* up-to-date JetBrains Ultimate IDE
+
+* nice-to-have: https://mkyong.com/tutorials/maven-tutorials/[Apache Maven, window="_blank"]
+
+== Introduction to JakartaEE
+
+
+=== Syllabus
+
+* JakartaEE / JavaEE
+* Deployment
+* Application-Server
+** Download and Starting Application Server
+* Lecture-Example: Simple REST Endpoint
+* Big Picture: From IDE to a Running App in the Application Server
+
+
+=== Questions
+
+* Difference Web-Server and Application Server
+* Why is an implementation of JakartaEE necessary?
+* What is a reference implementation?
+* What means "deployment"?
+
+== Example: Car Rental
+
+=== Class Diagram
+
+[plantuml,cld,png]
+----
+@startuml
+class Vehicle {
+- brand: String
+- model: String
+- pricePerDay: double
+}
+
+class Customer {
+- name: String
+- dob: LocalDate
+}
+
+class Rental {
+- vehicle: Vehicle
+- customer: Customer
+- startDate: LocalDate
+- endDate: LocalDate
+- discount: double
+}
+
+Vehicle "1" <-left- "*" Rental : is rented >
+Rental "*" -right-> "1" Customer : < rents
+
+@enduml
+----
+
+// Overview Jakarta EE - Microprofile
+
+* http://edufs.edu.htl-leonding.ac.at/~t.stuetz/download/nvs/presentations.2021/00_java.oekosystem.pdf[00_java.oekosystem.pdf, window="_blank"]
+* http://edufs.edu.htl-leonding.ac.at/~t.stuetz/download/nvs/presentations.2021/01_Introduction.pdf[01_Introduction.pdf, window="_blank"]
+* http://edufs.edu.htl-leonding.ac.at/~t.stuetz/download/nvs/presentations.2021/01_NVS_Uebersicht.pdf[01_NVS_Uebersicht.pdf, window="_blank"]
+* http://edufs.edu.htl-leonding.ac.at/~t.stuetz/download/nvs/presentations.2021/02_microprofile.pdf[02_microprofile.pdf, window="_blank"]
+* http://edufs.edu.htl-leonding.ac.at/~t.stuetz/download/nvs/presentations.2021/03_Beziehungen%20zwischen%20Klassen.pdf[03_Beziehungen zwischen Klassen.pdf, window="_blank"]
+
+
+* https://jaxlondon.com/wp-content/uploads/2019/07/Quarkus-cheatsheet-jaxlondon.pdf[Quarkus-cheatsheet-jaxlondon.pdf, window="_blank"]
+
+// REST
+
+include::rest-introduction.adoc[]
+include::rest-entity.adoc[]
+
+
+// CDI
+
+include::cdi.adoc[]
+
+// Logging
+
+https://quarkus.io/guides/logging[Quarkus - Configuring Logging]
+
+
+
+
+////
+== Quarkus - Persistence / JPA
+.Use github-branches
+****
+make examples for jpa, panache, ... in separate branches and merge one (panache) in the master-branch
+****
+* Datasources
+* JPA
+* Panache
+* Transactions
+* Validation
+////
+
+include::jpa.adoc[]
+
+// Quarkus - Panache
+
+include::panache.adoc[]
+
+// Quarkus - WebSockets
+
+include::websockets.adoc[]
+
+// Quarkus - Security
+
+* RBAC
+* Security Realms
+* KeyCloak
+
+include::security.adoc[]
+
+== Quarkus - Cloud
+
+
+* Native
+* Docker
+* Kubernetes
+
+=== Create Container Images with Jib, Docker, S2I
+
+//include::kubernetes-jib.adoc[]
+<<kubernetes-jib.adoc#, open doc>>
+
+=== Minikube
+
+//include::kubernetes-minikube.adoc[]
+<<kubernetes-minikube.adoc#, open doc>>
+
+=== Google Cloud
+//include::kubernetes-google-cloud.adoc[]
+<<kubernetes-google-cloud.adoc#, open doc>>
+
+=== Oracle Cloud Platform
+//include::kubernetes-oracle.adoc[]
+<<kubernetes-oracle.adoc#, open doc>>
+
+=== IBM Cloud Platform
+//include::kubernetes-ibm-cloud.adoc[]
+<<kubernetes-ibm-cloud.adoc#, open doc>>
+
+
+== Quarkus - Web
+
+* Qute
+
+
+== microprofile / Quarkus - Introduction
+
+* Health Check
+* OpenTracing
+* Metrics
+* Fault Tolerance
+
+== Error Handling
+
+=== in restful Services
+=== db handling
+
+== Miscancellous
+
+* Logging
+* noSQL Database
+* Flyway / Liquibase
+
+https://www.baeldung.com/java-quarkus-testing[Baeldung - Testing Quarkus Applications]
+
+== Sources
+
+* https://jcp.org/en/jsr/platform?listBy=3&listByType=platform[Java EE 8 specifications, window="_blank"]
+* https://jakarta.ee/specifications/[Jakarta EE 8 Specifications, window="_blank"]
+
+== Furthermore interesting sources
+
+* https://ibm-developer.gitbook.io/workshops/[IBM Workshops, window="_blank"]
+* http://www.mastertheboss.com/soa-cloud/quarkus[mastertheboss - Tutorials]
+* https://github.com/quarkusio/quarkus-quickstarts[Sample Code Quarkus Quickstarts, window="_blank"]
+* https://developers.redhat.com/blog/2020/09/11/quarkus-and-jakarta-ee-together-or-not/[Quarkus and Jakarta EE: Together, or not?]
+
+

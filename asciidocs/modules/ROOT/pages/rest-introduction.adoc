@@ -1,0 +1,324 @@
+== REST Introduction
+
+
+=== First Example
+
+=== Create a Project
+
+==== Quarkus Site
+
+image:quarkus-site-create-project.png[]
+
+==== Maven
+
+[source,shell]
+----
+mvn io.quarkus:quarkus-maven-plugin:1.7.1.Final:create \
+    -DprojectGroupId=at.htl \
+    -DprojectArtifactId=getting-started \
+    -DclassName="at.htl.getting.started.GreetingResource" \
+    -Dpath="/hello"
+cd getting-started
+idea .
+----
+
+=== Implement a service
+
+.GreetingResource.java
+[source,java]
+----
+import org.eclipse.microprofile.config.inject.ConfigProperty;
+
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
+
+@Path("/hello")
+public class GreetingResource {
+
+    @ConfigProperty(name = "test", defaultValue = "hello")
+    String test;
+
+    @GET
+    @Produces(MediaType.TEXT_PLAIN)
+    public String hello() {
+        return test;
+    }
+}
+----
+
+=== Development mode
+
+.Starting in the development mode
+[source,bash]
+----
+./mvnw clean compile quarkus:dev
+----
+
+=== Request the Restful API
+
+
+.using https://httpie.org[httpie]
+[source,bash]
+----
+$> http :8080/hello
+HTTP/1.1 200 OK
+Content-Length: 5
+Content-Type: text/plain;charset=UTF-8
+
+hello
+----
+
+
+.using curl
+[source,bash]
+----
+$> curl localhost:8080/hello
+hello%
+----
+
+
+.using http-requests in IntelliJ
+[source,bash]
+----
+GET localhost:8080/hello
+
+###
+----
+
+.result
+[source,bash]
+----
+hello
+----
+
+image:http-request-in-intellij.png[]
+
+.in browser
+image:rest-result-in-browser.png[]
+
+
+.using rest-clients
+* https://www.postman.com/[Postman]
+* https://insomnia.rest/[Insomnia]
+* https://addons.mozilla.org/de/firefox/addon/restclient/[RESTClient] for Mozilla Firefox
+* https://chrome.google.com/webstore/detail/advanced-rest-client[Advanced REST client] for Google Chrome
+
+
+
+=== Test the Result
+
+.src/test/java/at/htl/getting/started/GreetingResourceTest.java
+[source,java]
+----
+package at.htl.getting.started;
+
+import io.quarkus.test.junit.QuarkusTest;
+import org.junit.jupiter.api.Test;
+
+import static io.restassured.RestAssured.given;
+import static org.hamcrest.CoreMatchers.is;
+
+@QuarkusTest  // <.>
+public class GreetingResourceTest {
+
+    @Test
+    public void testHelloEndpoint() {
+        given()
+          .when().get("/hello")
+          .then()
+             .statusCode(200)
+             .body(is("hello"));
+    }
+}
+----
+
+<.> The first time a @QuarkusTest annotated tests is running,
+the Quarkus test extension will start Quarkus.
+Quarkus will then remain running for the duration of the test run.
+This makes testing very fast, because Quarkus is only started once,
+however it does limit you to testing a single configuration per module, as you can’t restart Quarkus in a different configuration.
+Test profiles lift this limitation. (https://quarkus.io/blog/quarkus-test-profiles/#recap-on-how-quarkustest-works[source, window="_blank"])
+
+=== What is a Restful Endpoint?
+
+* http://edufs.edu.htl-leonding.ac.at/~t.stuetz/download/nvs/presentations.2021/04_REST_Uebersicht.pdf[04_REST_Uebersicht, window="_blank"]
+* https://entwickler.de/online/web/restful-api-design-intro-579826380.html[RESTful-API-Design: Eine Einführung, window="_blank"]
+
+
+.src/test/java/at/htl/getting/started/TimeServerResourceTest.java
+[source,java]
+----
+package at.htl.getting.started;
+
+import org.junit.jupiter.api.Test;
+
+import static io.restassured.RestAssured.when;
+import static org.hamcrest.Matchers.startsWith;
+
+@QuarkusTest
+class TimeServerResourceTest {
+
+    @Test
+    public void fetchTime() {
+        when()
+                .get("time")
+        .then()
+                .statusCode(200)
+                .body(startsWith("Time:"));
+    }
+}
+----
+
+
+.execute the tests
+* in the terminal
+* in the IDE
+
+.start the test in the terminal
+[source,bash]
+----
+./mvnw test
+----
+
+IMPORTANT: Every test shall fail at least once
+
+
+=== HTTP Request Method
+
+==== GET
+==== POST
+==== PUT
+==== PATCH
+==== DELETE
+
+=== MIME-Types (MediaType)
+
+==== text/plain
+
+==== application/json
+
+==== application/xml
+
+=== Parametertypen
+
+* JSON is a first class citizen
+* XML still works - it is a little bit outdated
+
+* Sources:
+** JavaEE 8 and Angular
+
+==== void
+
+==== Response
+
+==== JsonValue/JsonObject/JsonArray
+
+==== Entity Providers (JSON-Binding)
+
+Converts ie Json to Object-Types like String or ie Person.
+
+.Marshalling
+[plantuml,marshalling,png]
+----
+@startuml
+storage "java-object" as javaobject
+file json
+javaobject -right-> json :marshalling >
+@enduml
+----
+
+.Unmarshalling
+[plantuml,unmarshalling,png]
+----
+@startuml
+storage "java-object" as javaobject
+file json
+javaobject <-right- json :< unmarshalling
+@enduml
+----
+
+
+
+* Libraries:
+** JSON-B für JSON
+** JAXB für XML
+* bei XML bei den Entitäten `@XmlRootElement` nicht vergessen
+
+[source,java]
+----
+import javax.xml.bind.annotation.XmlRootElement;
+
+@XmlRootElement
+public class Person {
+  ...
+}
+----
+
+=== Rückgabe von Requests
+
+* Standards
+** https://tools.ietf.org/html/rfc7231#section-4[RFC 7231, Abschnitt 4: Request methods]
+** https://tools.ietf.org/html/rfc5789#section-2[RFC 5789, Abschnitt 2: Patch method]
+
+* gute Erläuterung
+** https://www.restapitutorial.com/lessons/httpmethods.html[www.restapitutorial.com]
+** https://restfulapi.net/http-methods/[restfulapi.net]
+
+=== WebApplicationException
+
+* Why using WebApplicationExceptions, when the Response can also return error status codes:
+** Throwing the exception makes your code cleaner, easier to reason about and thus easier to understand. It's then cleaner to `throw new ProductNotFoundException()` or `throw new AccessDeniedException()` and let the framework handle it instead of building a Response every time and later follow the details used to build it to figure out what's happening in that section of code.
+**  If you are using transactions, it allows the container to rollback any changes that you had previously made to your data within that request. If you just return a regular response, you will need to take care of that by your self, https://stackoverflow.com/a/14114176[source, window="_blank"]
+* Example: https://dennis-xlc.gitbooks.io/restful-java-with-jax-rs-2-0-2rd-edition/content/en/part1/chapter7/exception_handling.html[Exception Handling]
+
+
+=== Context
+
+* https://www.javaguides.net/2018/06/jax-rs-context-annotation-with-examples.html[JAX-RS @Context Annotation with Examples, window="_blank"]
+* https://mkyong.com/webservices/jax-rs/get-http-header-in-jax-rs/[Get HTTP header in JAX-RS, window="_blank"]
+
+When you are returning the path to a new created resource (after CREATE) you need
+the fully qualified url, which you can get with `@Context UriInfo uriDetails`.
+
+=== Json-Libraries
+
+==== JSON-B
+* https://javaee.github.io/jsonb-spec/users-guide.html[Json Binding 1.0 Users Guide, window="_blank"]
+* https://docs.oracle.com/en/middleware/standalone/weblogic-server/14.1.1.0/wlprg/java-api-json-binding.html[Java API for JSON Binding, window="_blank"]
+
+.Begriffe
+* Mapping
+* Default Mapping
+* Customizing with Annotations
+
+==== JSON-P
+* https://docs.oracle.com/en/middleware/standalone/weblogic-server/14.1.1.0/wlprg/java-api-for-json-proc.html[Java API for JSON Processing, window="_blank"]
+* https://www.javaguides.net/2019/07/java-json-processing-tutorial.html[Java JSON Processing Tutorial | JSON-P, window="_blank"]
+* http://www.mastertheboss.com/javaee/json/json-p-tutorial-on-wildfly[JSON-P tutorial on Wildfly, window="_blank"]
+* https://www.developer.com/java/ent/explore-the-java-api-for-json-processing.html[Explore the Java API for JSON Processing, window="_blank"]
+
+===== Streaming API
+
+===== Object Model API
+
+==== Jackson
+
+* http://tutorials.jenkov.com/java-json/jackson-objectmapper.html[Jenkov Tutorial, window="_blank"]
+* https://www.codeflow.site/de/article/jackson-jsonformat[Leitfaden für @JsonFormat in Jackson, window="_blank"]
+
+=== Request- und Response-Filter
+
+.Sources
+* https://www.baeldung.com/jersey-filters-interceptors
+* https://dennis-xlc.gitbooks.io/restful-java-with-jax-rs-2-0-2rd-edition/content/en/part1/chapter12/server_side_filters.html
+* https://www.logicbig.com/tutorials/java-ee-tutorial/jax-rs/filters.html
+* https://itnext.io/how-to-implement-a-jax-rs-authentication-filter-3eee64b34b99
+
+
+=== Reactive Endpoints
+
+[only for interested students]
+
+* https://ibm-developer.gitbook.io/reactive-endpoints-with-quarkus-on-openshift/build-a-new-version-of-the-microservice/exercise-02[Develop reactive Endpoints, window="_blank"]

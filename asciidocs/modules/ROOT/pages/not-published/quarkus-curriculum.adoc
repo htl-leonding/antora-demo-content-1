@@ -1,0 +1,52 @@
+= Quarkus Lecture - Curriculum
+Thomas W. Stütz
+0.1.0, 2020-11-05: work-in-progress
+ifndef::imagesdir[:imagesdir: images]
+//:toc-placement!:  // prevents the generation of the doc at this position, so it can be printed afterwards
+:sourcedir: ../src/main/java
+:icons: font
+:sectnums:    // Nummerierung der Überschriften / section numbering
+:toc: left
+:toclevels: 5
+// https://mrhaki.blogspot.com/2014/06/awesome-asciidoc-use-link-attributes.html
+:linkattrs:
+// print the toc here (not at the default position)
+toc::[]
+
+[cols="1,3"]
+|===
+|Topic |Description
+
+|Preparations, Installation
+|
+
+|REST-Resources
+|
+
+|CDI
+a|Context & *Dependency Injection*
+
+* POJOs persisted in repository w/ collections
+
+|Persistence
+a|
+* plain JPA
+* Panache
+** Repository Pattern
+** (Active Data Record)
+
+|Automated Testing
+a|
+* RESTassured
+* karate
+
+|WebSockets
+|
+
+|Deployment in Kubernetes
+|
+
+|graphQL
+|
+
+|===

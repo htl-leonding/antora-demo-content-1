@@ -1,0 +1,589 @@
+== Persistence / JPA
+
+=== How to start a PostgreSQL DB in Docker
+
+Source: https://quarkus.io/guides/datasource[Quarkus - Datasources, window="_blank"], https://quarkus.io/guides/hibernate-orm[Quarkus - Using Hibernate ORM and JPA, window="_blank"]
+
+.start postgresql in a Docker container (https://hub.docker.com/_/postgres[docker-hub, window="_blank"])
+[source,bash]
+----
+docker run --ulimit memlock=-1:-1 -it --rm --memory-swappiness=0 \
+           --name postgres-db -e POSTGRES_USER=app \
+           -e POSTGRES_PASSWORD=app -e POSTGRES_DB=db \
+           -p 5432:5432 postgres:12.4
+----
+
+.terminal output from starting the db
+[%collapsible]
+====
+
+----
+ $> docker run --ulimit memlock=-1:-1 -it --rm=true --memory-swappiness=0 \
+>            --name postgres-db -e POSTGRES_USER=app \
+>            -e POSTGRES_PASSWORD=app -e POSTGRES_DB=db \
+>            -p 5432:5432 postgres:12.4
+Unable to find image 'postgres:12.4' locally
+12.4: Pulling from library/postgres
+bf5952930446: Pulling fs layer
+9577476abb00: Pull complete
+2bd105512d5c: Pull complete
+b1cd21c26e81: Pull complete
+34a7c86cf8fc: Pull complete
+274e7b0c38d5: Pull complete
+3e831b350d37: Pull complete
+38fa0d496534: Pull complete
+c989da35e5c0: Pull complete
+26dc6fdd7b2d: Pull complete
+3c5032512cf3: Pull complete
+26910ececf99: Pull complete
+0339413523e8: Pull complete
+d61df7db53da: Pull complete
+Digest: sha256:9f325740426d14a92f71013796d98a50fe385da64a7c5b6b753d0705add05a21
+Status: Downloaded newer image for postgres:12.4
+The files belonging to this database system will be owned by user "postgres".
+This user must also own the server process.
+
+The database cluster will be initialized with locale "en_US.utf8".
+The default database encoding has accordingly been set to "UTF8".
+The default text search configuration will be set to "english".
+
+Data page checksums are disabled.
+
+fixing permissions on existing directory /var/lib/postgresql/data ... ok
+creating subdirectories ... ok
+selecting dynamic shared memory implementation ... posix
+selecting default max_connections ... 100
+selecting default shared_buffers ... 128MB
+selecting default time zone ... Etc/UTC
+creating configuration files ... ok
+running bootstrap script ... ok
+performing post-bootstrap initialization ... ok
+syncing data to disk ... ok
+
+initdb: warning: enabling "trust" authentication for local connections
+You can change this by editing pg_hba.conf or using the option -A, or
+--auth-local and --auth-host, the next time you run initdb.
+
+Success. You can now start the database server using:
+
+    pg_ctl -D /var/lib/postgresql/data -l logfile start
+
+waiting for server to start....2020-08-30 09:34:40.573 UTC [47] LOG:  starting PostgreSQL 12.4 (Debian 12.4-1.pgdg100+1) on x86_64-pc-linux-gnu, compiled by gcc (Debian 8.3.0-6) 8.3.0, 64-bit
+2020-08-30 09:34:40.575 UTC [47] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
+2020-08-30 09:34:40.588 UTC [48] LOG:  database system was shut down at 2020-08-30 09:34:40 UTC
+2020-08-30 09:34:40.592 UTC [47] LOG:  database system is ready to accept connections
+ done
+server started
+CREATE DATABASE
+
+
+/usr/local/bin/docker-entrypoint.sh: ignoring /docker-entrypoint-initdb.d/*
+
+waiting for server to shut down...2020-08-30 09:34:40.786 UTC [47] LOG:  received fast shutdown request
+.2020-08-30 09:34:40.788 UTC [47] LOG:  aborting any active transactions
+2020-08-30 09:34:40.790 UTC [47] LOG:  background worker "logical replication launcher" (PID 54) exited with exit code 1
+2020-08-30 09:34:40.790 UTC [49] LOG:  shutting down
+2020-08-30 09:34:40.799 UTC [47] LOG:  database system is shut down
+ done
+server stopped
+
+PostgreSQL init process complete; ready for start up.
+
+2020-08-30 09:34:40.899 UTC [1] LOG:  starting PostgreSQL 12.4 (Debian 12.4-1.pgdg100+1) on x86_64-pc-linux-gnu, compiled by gcc (Debian 8.3.0-6) 8.3.0, 64-bit
+2020-08-30 09:34:40.899 UTC [1] LOG:  listening on IPv4 address "0.0.0.0", port 5432
+2020-08-30 09:34:40.899 UTC [1] LOG:  listening on IPv6 address "::", port 5432
+2020-08-30 09:34:40.901 UTC [1] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
+2020-08-30 09:34:40.911 UTC [65] LOG:  database system was shut down at 2020-08-30 09:34:40 UTC
+2020-08-30 09:34:40.915 UTC [1] LOG:  database system is ready to accept connections
+----
+====
+
+* https://quarkus.io/guides/hibernate-orm#quarkus-hibernate-orm_quarkus.hibernate-orm.cache[Originalversion, window="_blank"] der DB: 10.5
+* memlock +
+maximum locked-in-memory address space (KB) +
+This is memory that will not be paged out. It is frequently used by +
+database management applications such as Oracle or Sybase to lock +
+shared memory for a shared pool so that it is always in memory for +
+access by multiple sessions.
+* This is a developer db. The data is stored inside the container, that means it is not really persistent.
+
+=== JPA
+
+* http://edufs.edu.htl-leonding.ac.at/~t.stuetz/download/nvs/presentations.2021/06_JPA.pdf[06_JPA.pdf, window="_blank"]
+
+
+=== Create a Datasource in IntelliJ IDEA
+
+.create a datasource in IntelliJ
+image:jpa-intellij-create-datasource-1.png[]
+
+.configure the datasource
+image:jpa-intellij-create-datasource-2.png[]
+
+.create a table
+image:jpa-intellij-create-table.png[]
+
+
+=== Example Vehicle
+
+==== Add Dependencies to pom.xml
+
+.add extension to pom.xml
+[source,bash]
+----
+./mvnw quarkus:add-extension -Dextensions="io.quarkus:quarkus-hibernate-orm"
+./mvnw quarkus:add-extension -Dextensions="io.quarkus:quarkus-jdbc-postgresql"
+----
+
+.also possible:
+[source,bash]
+----
+./mvnw quarkus:add-extension -Dextensions="hibernate-orm,jdbc-postgresql"
+----
+
+.terminal output
+[%collapsible]
+====
+----
+[INFO] Scanning for projects...
+[INFO]
+[INFO] ---------------------------< at.htl:vehicle >---------------------------
+[INFO] Building vehicle 1.0-SNAPSHOT
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO]
+[INFO] --- quarkus-maven-plugin:1.7.1.Final:add-extension (default-cli) @ vehicle ---
+? Extension io.quarkus:quarkus-hibernate-orm has been installed
+? Extension io.quarkus:quarkus-jdbc-postgresql has been installed
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  1.191 s
+[INFO] Finished at: 2020-08-30T13:20:11+02:00
+[INFO] ------------------------------------------------------------------------
+
+----
+====
+
+==== Configure application.properties
+
+.https://quarkus.io/guides/hibernate-orm#quarkus-hibernate-orm_configuration[configuration property, window="_blank"]
+[source,properties]
+----
+# datasource configuration
+quarkus.datasource.db-kind = postgresql
+quarkus.datasource.username = app
+quarkus.datasource.password = app
+quarkus.datasource.jdbc.url = jdbc:postgresql://localhost:5432/db
+
+# drop and create the database at startup (use `update` to only update the schema)
+quarkus.hibernate-orm.database.generation=drop-and-create
+----
+
+==== Second-Level-Cache
+
+https://www.developer.com/java/using-second-level-caching-in-a-jpa-application.html[Using Second Level Caching in a JPA Application, window="_blank"]
+
+==== Entity
+
+.src/main/java/at/htl/vehicle/entity/Vehicle.java
+[source,java]
+----
+package at.htl.vehicle.entity;
+
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+
+@Entity
+public class Vehicle {
+
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    private String brand;
+    private String model;
+
+    public Vehicle() {
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+//    public void setId(Long id) {
+//        this.id = id;
+//    }
+
+    public Vehicle(String brand, String model) {
+        this.brand = brand;
+        this.model = model;
+    }
+
+    //region getter and setter
+    public String getBrand() {
+        return brand;
+    }
+
+    public void setBrand(String brand) {
+        this.brand = brand;
+    }
+
+    public String getModel() {
+        return model;
+    }
+
+    public void setModel(String model) {
+        this.model = model;
+    }
+    //endregion
+}
+----
+
+==== Startup Method
+
+.src/main/java/at/htl/vehicle/control/InitBean.java
+[source,java]
+----
+package at.htl.vehicle.control;
+
+import io.quarkus.runtime.StartupEvent;
+import org.jboss.logging.Logger;
+
+import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.event.Observes;
+
+@ApplicationScoped
+public class InitBean {
+
+    private static final Logger LOG = Logger.getLogger(InitBean.class); // <.>
+
+    void startup(@Observes StartupEvent event) { // <.>
+        LOG.info("It works!");
+    }
+}
+----
+
+<.> Initialize the https://quarkus.io/guides/logging[Logging, window="_blank"]. When using the jboss-logger no additional dependencies are necessary
+<.> Observer-Pattern. Callback-method after starting
+
+==== Insert Data when Starting
+
+.src/main/resources/import.sql
+[source,sql]
+----
+insert into vehicle (brand, model) VALUES ('VW', 'Käfer 1400');
+insert into vehicle (brand, model) VALUES ('Opel', 'Blitz');
+----
+
+* the name of the insert-sql-file is import.sql (placed in the root of the resources folder)
+* when you want to change this name use this property: `quarkus.hibernate-orm.sql-load-script`
+
+image:jpa-create-table-after-startup.png[]
+
+==== VehicleRepository
+
+.src/main/java/at/htl/vehicle/control/VehicleRepository.java
+[source,java]
+----
+package at.htl.vehicle.control;
+
+import at.htl.vehicle.entity.Vehicle;
+
+import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
+import javax.persistence.EntityManager;
+import javax.transaction.Transactional;
+
+@ApplicationScoped
+public class VehicleRepository {
+
+    @Inject
+    EntityManager em;
+
+    @Transactional
+    public void save(Vehicle vehicle) {
+        em.persist(vehicle);
+    }
+
+    @Transactional
+    public void save(String brand, String model) {
+        em.persist(new Vehicle(brand, model));
+    }
+
+    public Vehicle findById(long id) {
+        return em.find(Vehicle.class, id);
+    }
+
+    public List<Vehicle> findAll() {
+        TypedQuery<Vehicle> query = em.createQuery("select v from Vehicle v", Vehicle.class);
+        return query.getResultList();
+    }
+}
+----
+
+.src/main/java/at/htl/vehicle/boundary/VehicleResource.java
+[source,java]
+----
+package at.htl.vehicle.boundary;
+
+import at.htl.vehicle.control.VehicleRepository;
+import at.htl.vehicle.entity.Vehicle;
+
+import javax.inject.Inject;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
+import java.util.ArrayList;
+import java.util.List;
+
+@Path("/vehicle")
+public class VehicleResource {
+
+    @Inject
+    VehicleRepository vehicleRepository;
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("{id}")
+    public Vehicle find(@PathParam("id") long id) {
+        return vehicleRepository.findById(id);
+    }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<Vehicle> findAll() {
+        return vehicleRepository.findAll();
+    }
+}
+----
+
+==== A Quick Glimpse to the Result
+
+[source,bash]
+----
+GET localhost:8080/vehicle
+----
+
+.terminal output
+[%collapsible]
+====
+----
+GET http://localhost:8080/vehicle
+
+HTTP/1.1 200 OK
+Content-Length: 85
+Content-Type: application/json
+
+[
+  {
+    "brand": "VW",
+    "id": 1,
+    "model": "Käfer 1400"
+  },
+  {
+    "brand": "Opel",
+    "id": 2,
+    "model": "Blitz"
+  }
+]
+
+Response code: 200 (OK); Time: 89ms; Content length: 84 bytes
+----
+====
+
+[source,bash]
+----
+GET localhost:8080/vehicle/2
+----
+
+.terminal output
+[%collapsible]
+====
+----
+GET http://localhost:8080/vehicle/2
+
+HTTP/1.1 200 OK
+Content-Length: 39
+Content-Type: application/json
+
+{
+  "brand": "Opel",
+  "id": 2,
+  "model": "Blitz"
+}
+
+Response code: 200 (OK); Time: 40ms; Content length: 39 bytes
+----
+====
+
+==== Testing w/ JUnit and assertJ
+
+https://assertj.github.io/doc/[AssertJ]
+
+.add to pom.xml
+[source,xml]
+----
+<dependency>
+  <groupId>org.assertj</groupId>
+  <artifactId>assertj-core</artifactId>
+  <version>3.17.1</version>
+  <scope>test</scope>
+</dependency>
+----
+
+.VehicleResourceTest.java
+[source,java]
+----
+package at.htl.vehicle.boundary;
+
+import at.htl.vehicle.entity.Vehicle;
+import io.quarkus.test.junit.QuarkusTest;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+
+import javax.ws.rs.client.Entity;
+import java.util.ArrayList;
+import java.util.List;
+
+import static io.restassured.RestAssured.given;
+import static org.hamcrest.CoreMatchers.is;
+
+import static org.assertj.core.api.Assertions.*;
+
+@QuarkusTest
+public class VehicleResourceTest {
+
+    @Test
+    public void testVehicleEndpoint() {
+        List<Vehicle> vehicles = new ArrayList<>();
+
+        vehicles = given()
+             .when()
+                //.log().body() // to log the request body (here it is empty)
+                .get("/vehicle")
+             .then()
+                .log().body()   // to log the response body
+                .statusCode(200)
+                .extract().body().jsonPath().getList(".", Vehicle.class);
+
+        System.out.println(vehicles);
+
+        assertThat(vehicles) // <.>
+                .isNotEmpty()
+                .hasSize(2)
+                .extracting(Vehicle::getBrand)
+                .containsOnly("VW", "Opel");
+    }
+
+    @Test
+    public void testVehicleEndpointWithId() {
+        given()
+                .pathParam("id", "2")
+        .when()
+                //.log().body() // to log the request body (here is empty)
+                .get("/vehicle/{id}")
+        .then()
+                .log().body()   // to log the response body
+                .statusCode(200)
+                .body("brand", is("Opel"),  // <.>
+                      "model", is("Blitz"));
+    }
+}
+----
+
+<.> assertThat is from assertJ
+<.> is(...) is a hamcrest-matcher
+
+Examples for assertJ: https://medium.com/enfuse-io/testing-java-collections-with-assertj-2fa678d80952[Testing Java Collections with AssertJ, window="_blank"]
+
+IMPORTANT: it is possible to start the tests in the IDE and also to debug it
+
+.start tests
+[source,bash]
+----
+./mvnw test
+----
+
+.terminal output
+[%collapsible]
+====
+----
+[INFO] Scanning for projects...
+[INFO]
+[INFO] ---------------------------< at.htl:vehicle >---------------------------
+[INFO] Building vehicle 1.0-SNAPSHOT
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO]
+[INFO] --- quarkus-maven-plugin:1.7.1.Final:prepare (default) @ vehicle ---
+[INFO]
+[INFO] --- maven-resources-plugin:2.6:resources (default-resources) @ vehicle ---
+[INFO] Using 'UTF-8' encoding to copy filtered resources.
+[INFO] Copying 3 resources
+[INFO]
+[INFO] --- maven-compiler-plugin:3.8.1:compile (default-compile) @ vehicle ---
+[INFO] Nothing to compile - all classes are up to date
+[INFO]
+[INFO] --- quarkus-maven-plugin:1.7.1.Final:prepare-tests (default) @ vehicle ---
+[INFO]
+[INFO] --- maven-resources-plugin:2.6:testResources (default-testResources) @ vehicle ---
+[INFO] Using 'UTF-8' encoding to copy filtered resources.
+[INFO] skip non existing resourceDirectory /Users/stuetz/SynologyDrive/htl/skripten/themen/jakartaee-microprofile/quarkus-lecture-notes/labs/100-rest/vehicle/src/test/resources
+[INFO]
+[INFO] --- maven-compiler-plugin:3.8.1:testCompile (default-testCompile) @ vehicle ---
+[INFO] Nothing to compile - all classes are up to date
+[INFO]
+[INFO] --- maven-surefire-plugin:3.0.0-M5:test (default-test) @ vehicle ---
+[INFO]
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running at.htl.vehicle.boundary.VehicleResourceTest
+2020-08-30 16:48:27,117 INFO  [at.htl.veh.con.InitBean] (main) It works!
+2020-08-30 16:48:27,204 INFO  [io.quarkus] (main) Quarkus 1.7.1.Final on JVM started in 2.082s. Listening on: http://0.0.0.0:8081
+2020-08-30 16:48:27,205 INFO  [io.quarkus] (main) Profile test activated.
+2020-08-30 16:48:27,205 INFO  [io.quarkus] (main) Installed features: [agroal, cdi, hibernate-orm, jdbc-postgresql, mutiny, narayana-jta, resteasy, resteasy-jsonb, smallrye-context-propagation]
+{
+    "brand": "Opel",
+    "id": 2,
+    "model": "Blitz"
+}
+[
+    {
+        "brand": "VW",
+        "id": 1,
+        "model": "Käfer 1400"
+    },
+    {
+        "brand": "Opel",
+        "id": 2,
+        "model": "Blitz"
+    }
+]
+[at.htl.vehicle.entity.Vehicle@45f6181a, at.htl.vehicle.entity.Vehicle@19d0d1ab]
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.848 s - in at.htl.vehicle.boundary.VehicleResourceTest
+2020-08-30 16:48:28,763 INFO  [io.quarkus] (main) Quarkus stopped in 0.022s
+[INFO]
+[INFO] Results:
+[INFO]
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0
+[INFO]
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  7.085 s
+[INFO] Finished at: 2020-08-30T16:48:28+02:00
+[INFO] ------------------------------------------------------------------------
+----
+====
+
+==== Exercise
+
+* Add custom insert-scripts (ins_vehicle.sql) in sql to prepare the application with data.
+* Add the other entity classes (Rental, Customer) - Don't forget the associations.
+* Add CRUD-functionality to the restful API.
+* Add named queries
+
+
+

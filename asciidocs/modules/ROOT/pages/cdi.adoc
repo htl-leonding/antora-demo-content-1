@@ -1,0 +1,109 @@
+== CDI - Context and Dependency Injection
+
+-> https://quarkus.io/guides/cdi
+
+* Further Sources:
+** https://docs.jboss.org/weld/reference/
+** https://docs.jboss.org/cdi/spec/ (Quarkus is based on)
+
+
+=== Life Cycles / Scopes
+
+* @Dependent
+* @Singleton
+* @ApplicationScoped
+* @RequestScoped
+* @SessionScoped
+
+TIP: @ApplicationScoped (und auch @Singleton) wird zB für Repositories verwendet (Singleton-Pattern)
+
+=== Example `GreetingResource`
+
+
+.GreetingService.java
+[source,java]
+----
+package at.htl.getting.started;
+
+import javax.enterprise.context.ApplicationScoped;
+
+@ApplicationScoped
+// @RequestScoped
+public class GreetingService {
+
+    public String greeting(String name) {
+        return "hello " + name;
+    }
+}
+----
+
+.GreetingResource.java
+[source,java]
+----
+package at.htl.boundary;
+
+import at.htl.control.GreetingService;
+
+import javax.inject.Inject;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
+
+@Path("greet")
+public class GreetingResource {
+
+    @Inject
+    GreetingService greetingService;
+
+    @GET
+    @Produces(MediaType.TEXT_PLAIN)
+    @Path("{name}")
+    public String greeting(@PathParam("name") String name) {
+        return greetingService.greeting(name);
+    }
+
+}
+
+----
+
+
+
+=== Logging mit Dependency Injection
+
+Man kann auch einen Logger mit DI injizieren
+
+.Erstellen des Producers
+[source,java]
+----
+public class LoggerProducer {
+
+    @Produces
+    public Logger produceLogger(InjectionPoint injectionPoint) {
+        return Logger.getLogger(injectionPoint.getBean().getBeanClass());
+    }
+}
+----
+
+.Verwendung des injizierten Loggers
+[source,java]
+----
+@ApplicationScoped
+public class GreetingService {
+
+    @Inject
+    private Logger logger; // <.>
+
+    int counter;
+
+    public String greeting(String name) {
+        logger.info(String.format("Hello %s (%d x verwendet!)", name, ++counter)); // <.>
+        return String.format("Hello %s (%d x verwendet!)", name, ++counter);
+    }
+
+}
+----
+
+<.> Die Logger Klasse wird injiziert.
+<.> Die Verwendung bleibt gleich

@@ -1,0 +1,273 @@
+== REST with Entities
+
+=== Create the Vehicle Project
+
+.create-vehicle.sh
+[source,bash]
+----
+mvn io.quarkus:quarkus-maven-plugin:1.7.1.Final:create \
+    -DprojectGroupId=at.htl \
+    -DprojectArtifactId=vehicle \
+    -DclassName="at.htl.vehicle.boundary.VehicleResource" \
+    -Dpath="/vehicle"
+cd vehicle
+idea .
+----
+
+=== Create the Entity
+
+.src/main/java/at/htl/vehicle/entity/Vehicle.java
+[source,java]
+----
+package at.htl.vehicle.entity;
+
+public class Vehicle {
+    private String brand;
+    private String model;
+
+    public Vehicle() {
+    }
+
+    public Vehicle(String brand, String model) {
+        this.brand = brand;
+        this.model = model;
+    }
+
+    //region getter and setter
+    public String getBrand() {
+        return brand;
+    }
+
+    public void setBrand(String brand) {
+        this.brand = brand;
+    }
+
+    public String getModel() {
+        return model;
+    }
+
+    public void setModel(String model) {
+        this.model = model;
+    }
+    //endregion
+}
+----
+
+=== Create the Restful Service
+
+../src/main/java/at/htl/vehicle/boundary/VehicleResource.java
+[source,java]
+----
+package at.htl.vehicle.boundary;
+
+import at.htl.vehicle.entity.Vehicle;
+
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
+import java.util.ArrayList;
+import java.util.List;
+
+@Path("/vehicle")
+public class VehicleResource {
+
+    @GET
+    @Path("{id}")
+    public Vehicle find(@PathParam("id") long id) {
+        return new Vehicle("Opel " + id, "Commodore");
+    }
+
+    @GET
+    public List<Vehicle> findAll() {
+        List<Vehicle> all = new ArrayList<>();
+        all.add(find(42));
+        return all;
+    }
+}
+----
+
+==== Add JSON-Binding
+
+.execute in terminal to add JSON-Binding
+[source,bash]
+----
+./mvnw quarkus:add-extension -Dextensions="io.quarkus:quarkus-resteasy-jsonb"
+----
+
+.http-requests/requests.http
+[source,http]
+----
+GET localhost:8080/vehicle
+----
+
+.result in terminal
+[source,http]
+----
+GET http://localhost:8080/vehicle
+
+HTTP/1.1 200 OK
+Content-Length: 41
+Content-Type: application/json
+
+[
+  {
+    "brand": "Opel 42",
+    "model": "Commodore"
+  }
+]
+
+Response code: 200 (OK); Time: 25ms; Content length: 41 bytes
+----
+
+==== Test `findAll()`
+
+.unit test with REST-assured and Hamcrest
+[source,java]
+----
+package at.htl.vehicle.boundary;
+
+import at.htl.vehicle.entity.Vehicle;
+import io.quarkus.test.junit.QuarkusTest;
+import org.junit.jupiter.api.Test;
+
+import java.util.List;
+
+import static io.restassured.RestAssured.given;
+import static org.hamcrest.CoreMatchers.is;
+
+@QuarkusTest
+public class VehicleResourceTest {
+
+    @Test
+    public void testVehicleEndpoint() {
+        given()
+        .when()
+             //.log().body() // to log the request body (here it is empty)
+             .get("/vehicle")
+        .then()
+             .log().body()   // to log the response body // <.>
+             .statusCode(200)
+             .body("brand[0]",is("Opel 42"),  // <.>
+                   "model[0]",is("Commodore")
+             );
+    }
+}
+----
+
+<.> you can print out the body, headers, ... very conveniently.
+<.> because the result is an array, you access an element of the array.
+
+.test result in terminal
+[source,bash]
+----
+...
+... INFO  [io.quarkus] (main) Quarkus 1.7.1.Final on JVM started in 1.205s. Listening on: http://0.0.0.0:8081
+... INFO  [io.quarkus] (main) Profile test activated.
+... 21:55:38,368 INFO  [io.quarkus] (main) Installed features: [cdi, resteasy, resteasy-jsonb]
+
+[
+    {
+        "brand": "Opel 42",
+        "model": "Commodore"
+    }
+]
+
+... INFO  [io.quarkus] (main) Quarkus stopped in 0.021s
+
+Process finished with exit code 0
+----
+
+
+==== Test `find(...)`
+
+.http-requests/requests.http
+[source,http]
+----
+GET localhost:8080/vehicle/123
+----
+
+.result in terminal
+[source,bash]
+----
+GET http://localhost:8080/vehicle/123
+
+HTTP/1.1 200 OK
+Content-Length: 40
+Content-Type: application/json
+
+{
+  "brand": "Opel 123",
+  "model": "Commodore"
+}
+
+Response code: 200 (OK); Time: 24ms; Content length: 40 bytes
+----
+
+.unit test with REST-assured and Hamcrest
+[source,java]
+----
+@Test
+public void testVehicleEndpointWithId() {
+    given()
+         .pathParam("id", "123") // <.>
+    .when()
+         //.log().body() // to log the request body (here is empty)
+         .get("/vehicle/{id}")
+    .then()
+         .log().body()   // to log the response body
+         .statusCode(200)
+         .body("brand",is("Opel 123"),
+               "model",is("Commodore")
+         );
+}
+----
+
+<.> https://techeplanet.com/rest-assured-pathparam-example/[Rest Assured PathParam Example, window="_blank"]
+
+.test output in terminal
+[source, java]
+----
+...
+... INFO  [io.quarkus] (main) Quarkus 1.7.1.Final on JVM started in 1.172s. Listening on: http://0.0.0.0:8081
+... INFO  [io.quarkus] (main) Profile test activated.
+... INFO  [io.quarkus] (main) Installed features: [cdi, resteasy, resteasy-jsonb]
+
+{
+    "brand": "Opel 123",
+    "model": "Commodore"
+}
+
+... INFO  [io.quarkus] (main) Quarkus stopped in 0.022s
+
+Process finished with exit code 0
+----
+
+=== Questions
+
+* Why is the unit test executing w/o starting Quarkus explicitly? +
+  (@QuarkusTest starts Quarkus on Port 8081)
+* Why do you need to start Quarkus when using the file "request.http"? +
+  (Because this are only requests, the app must run therefore)
+
+
+=== Exercises
+
+* Create an Vehicle Service with CRUD functionality
+** (GET)
+** POST
+** DELETE
+** PATCH
+** PUT
+* Create an Vehicle Service with AssertJ instead of Hamcrest
+
+
+=== Keynote Presentation
+
+* http://edufs.edu.htl-leonding.ac.at/~t.stuetz/download/nvs/presentations.2021/05_REST_mit_Entity.pdf[05_REST_mit_Entity.pdf, window="_blank"]
+
+=== TODO
+
+* Example with CRUD functionality
+* Example with AssertJ

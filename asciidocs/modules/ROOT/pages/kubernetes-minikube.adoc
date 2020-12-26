@@ -1,0 +1,283 @@
+== Deploy Native Application to Kubernetes (Minikube)
+
+=== Create a new Project
+
+.create-quarkus-kubernetes.sh
+[source,bash]
+----
+mvn io.quarkus:quarkus-maven-plugin:1.7.1.Final:create \
+ -DprojectGroupId=at.htl \
+ -DprojectArtifactId=quarkus-kubernetes \
+ -DclassName="at.htl.WeatherResource" \
+ -Dpath="/weather" \
+ -Dextensions="kubernetes, docker"
+----
+
+[source,bash]
+----
+chmod +x create-quarkus-kubernetes.sh
+./create-quarkus-kubernetes.sh
+----
+
+=== Start minikube
+
+[source,bash]
+----
+minikube start
+----
+
+
+.minikube start
+image:k8s-minikube-start.png[]
+
+TIP: There is minikube in the Docker menu. (MacUser can also use home brew)
+
+[source,bash]
+----
+docker ps
+----
+
+.terminal output
+----
+CONTAINER ID        IMAGE               COMMAND                  CREATED             STATUS              PORTS                    NAMES
+8fed5e8cff30        registry:2          "/entrypoint.sh /etc…"   39 hours ago        Up 39 hours         0.0.0.0:5000->5000/tcp   registry
+----
+
+Now we will change the context of docker to minikube.
+When you close the shell, you are back to your "normal" docker.
+
+.This are the kubernetes images
+[source,bash]
+----
+eval $(minikube docker-env)
+----
+
+image:k8s-minikube-docker-ps.png[]
+
+
+=== Package the App
+
+[source,bash]
+----
+cd quarkus-kubernetes
+./mvnw clean package
+----
+
+.target/kubernetes/kubernetes.yml
+[source,yaml]
+----
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  annotations:
+    app.quarkus.io/vcs-url: https://github.com/htl-leonding-college/quarkus-lecture-notes.git
+    app.quarkus.io/build-timestamp: 2020-09-02 - 10:48:37 +0000
+    app.quarkus.io/commit-id: 7d68d95df5a5d5499903639c6dfc92e0e5486be7
+  labels:
+    app.kubernetes.io/name: quarkus-kubernetes
+    app.kubernetes.io/version: 1.0-SNAPSHOT
+  name: quarkus-kubernetes
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    app.quarkus.io/vcs-url: https://github.com/htl-leonding-college/quarkus-lecture-notes.git
+    app.quarkus.io/build-timestamp: 2020-09-02 - 10:48:37 +0000
+    app.quarkus.io/commit-id: 7d68d95df5a5d5499903639c6dfc92e0e5486be7
+  labels:
+    app.kubernetes.io/name: quarkus-kubernetes
+    app.kubernetes.io/version: 1.0-SNAPSHOT
+  name: quarkus-kubernetes
+spec:
+  ports:
+  - name: http
+    port: 8080
+    targetPort: 8080
+  selector:
+    app.kubernetes.io/name: quarkus-kubernetes
+    app.kubernetes.io/version: 1.0-SNAPSHOT
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    app.quarkus.io/vcs-url: https://github.com/htl-leonding-college/quarkus-lecture-notes.git
+    app.quarkus.io/build-timestamp: 2020-09-02 - 10:48:37 +0000
+    app.quarkus.io/commit-id: 7d68d95df5a5d5499903639c6dfc92e0e5486be7
+  labels:
+    app.kubernetes.io/name: quarkus-kubernetes
+    app.kubernetes.io/version: 1.0-SNAPSHOT
+  name: quarkus-kubernetes
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: quarkus-kubernetes
+      app.kubernetes.io/version: 1.0-SNAPSHOT
+  template:
+    metadata:
+      annotations:
+        app.quarkus.io/vcs-url: https://github.com/htl-leonding-college/quarkus-lecture-notes.git
+        app.quarkus.io/build-timestamp: 2020-09-02 - 10:48:37 +0000
+        app.quarkus.io/commit-id: 7d68d95df5a5d5499903639c6dfc92e0e5486be7
+      labels:
+        app.kubernetes.io/name: quarkus-kubernetes
+        app.kubernetes.io/version: 1.0-SNAPSHOT
+    spec:
+      containers:
+      - env:
+        - name: KUBERNETES_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        image: stuetz/quarkus-kubernetes:1.0-SNAPSHOT
+        imagePullPolicy: IfNotPresent
+        name: quarkus-kubernetes
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+      serviceAccount: quarkus-kubernetes
+----
+
+.src/main/resources/application.properties
+[source,properties]
+----
+quarkus.kubernetes.image-pull-policy=ifNotPresent # <.>
+quarkus.kubernetes.service-type=LoadBalancer # <.>
+----
+
+<.> The image will not pulled to the docker registry, when already existing
+<.> the options for the service type are +
+. NodePort
+. LoadBalancer
+. Ingress is not intended to use
+
+https://medium.com/google-cloud/kubernetes-nodeport-vs-loadbalancer-vs-ingress-when-should-i-use-what-922f010849e0[Kubernetes NodePort vs LoadBalancer vs Ingress? When should I use what?, window="_blank"]
+
+=== Deploy the App
+
+[source,bash]
+----
+./mvnw clean package -Dquarkus.kubernetes.deploy=true
+----
+
+----
+...
+[INFO] [io.quarkus.kubernetes.deployment.KubernetesDeployer] Deploying to kubernetes server: https://192.168.64.2:8443/ in namespace: default.
+[INFO] [io.quarkus.kubernetes.deployment.KubernetesDeployer] Applied: ServiceAccount quarkus-kubernetes.
+[INFO] [io.quarkus.kubernetes.deployment.KubernetesDeployer] Applied: Service quarkus-kubernetes.
+[INFO] [io.quarkus.kubernetes.deployment.KubernetesDeployer] Applied: Deployment quarkus-kubernetes.
+[INFO] [io.quarkus.deployment.QuarkusAugmentor] Quarkus augmentation completed in 103962ms
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  01:51 min
+[INFO] Finished at: 2020-09-02T17:26:16+02:00
+[INFO] ------------------------------------------------------------------------
+----
+
+
+.view pods
+[source,bash]
+----
+kubectl get pods
+----
+
+----
+NAME                                  READY   STATUS    RESTARTS   AGE
+quarkus-kubernetes-678d45d8f9-sbdkh   1/1     Running   0          5m47s
+----
+
+.view services
+[source,bash]
+----
+kubectl get svc
+----
+
+----
+NAME                 TYPE           CLUSTER-IP     EXTERNAL-IP   PORT(S)          AGE
+kubernetes           ClusterIP      10.96.0.1      <none>        443/TCP          93d
+quarkus-kubernetes   LoadBalancer   10.98.231.29   <pending>     8080:31532/TCP   8m21s
+----
+
+
+image:k8s-intellij-service-window.png[]
+
+
+.view services
+[source,bash]
+----
+kubectl get all
+----
+
+----
+NAME                                      READY   STATUS    RESTARTS   AGE
+pod/quarkus-kubernetes-678d45d8f9-sbdkh   1/1     Running   0          9m42s
+
+NAME                         TYPE           CLUSTER-IP     EXTERNAL-IP   PORT(S)          AGE
+service/kubernetes           ClusterIP      10.96.0.1      <none>        443/TCP          93d
+service/quarkus-kubernetes   LoadBalancer   10.98.231.29   <pending>     8080:31532/TCP   12m
+
+NAME                                 READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/quarkus-kubernetes   1/1     1            1           12m
+
+NAME                                            DESIRED   CURRENT   READY   AGE
+replicaset.apps/quarkus-kubernetes-5c6c7cf987   0         0         0       12m
+replicaset.apps/quarkus-kubernetes-678d45d8f9   1         1         1       9m42s
+----
+
+.open service in browser
+[source,bash]
+----
+minikube service quarkus-kubernetes
+----
+
+----
+|-----------|--------------------|-------------|---------------------------|
+| NAMESPACE |        NAME        | TARGET PORT |            URL            |
+|-----------|--------------------|-------------|---------------------------|
+| default   | quarkus-kubernetes | http/8080   | http://192.168.64.2:31532 |
+|-----------|--------------------|-------------|---------------------------|
+🎉  Opening service default/quarkus-kubernetes in default browser...
+----
+
+
+.https://minikube.sigs.k8s.io/docs/handbook/accessing/#getting-the-nodeport-using-the-service-command[view service-url, window="_blank"]
+[source,bash]
+----
+minikube service quarkus-kubernetes --url
+----
+
+----
+http://192.168.64.2:31532
+----
+
+image:k8s-minikube-service.png[]
+
+image:k8s-minikube-service-url.png[]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

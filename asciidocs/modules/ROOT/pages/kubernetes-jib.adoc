@@ -1,0 +1,150 @@
+== Create Docker Images with Container-Extension
+
+=== Push Quarkus Image in a (Local) Registry
+
+==== Create a Simple Quarkus Project with Jib
+
+Source: Udemy Course: https://www.udemy.com/course/quarkus-backend-development-java/[Quarkus Backend development with Java and GraalVM] created by Dmytro Chaban
+
+https://quarkus.io/guides/container-image#container-image-extensions[Jib]
+
+[source,bash]
+----
+mvn io.quarkus:quarkus-maven-plugin:1.9.2.Final:create \
+-DprojectGroupId=at.htl \
+-DprojectArtifactId=containers \
+-DclassName="at.htl.WeatherResource" \
+-Dpath="/weather" \
+-Dextensions="container-image-jib"
+----
+
+.or add the extension to an existing project
+[source,bash]
+----
+./mvnw quarkus:add-extension -Dextensions="container-image-jib"
+----
+
+==== Start a Docker Container with a Docker Registry
+
+We use this https://hub.docker.com/_/registry[Image, window="_blank"]
+
+[source,bash]
+----
+docker run -d -p 5000:5000 --restart always --name registry registry:2
+----
+
+.check, if the container is running
+[source,bash]
+----
+docker ps
+----
+
+.terminal output
+----
+CONTAINER ID        IMAGE               COMMAND                  CREATED             STATUS              PORTS                    NAMES
+ee0da556eced        registry:2          "/entrypoint.sh /etc…"   19 seconds ago      Up 18 seconds       0.0.0.0:5000->5000/tcp   registry
+----
+
+
+==== Build the Quarkus Project as Image
+
+[source,bash]
+----
+./mvnw clean package -Dquarkus.container-image.build=true
+----
+
+==== Configure the Quarkus Project
+
+.src/main/resources/application.properties
+[source,properties]
+----
+quarkus.container-image.registry=localhost:5000
+quarkus.container-image.insecure=true
+----
+
+[source,bash]
+----
+docker images
+----
+
+.terminal output
+----
+REPOSITORY           TAG                 IMAGE ID            CREATED             SIZE
+stuetz/containers    1.0-SNAPSHOT        df644dfa092e        5 minutes ago       199MB
+...
+----
+
+==== Push the Quarkus Project Image into the Registry
+
+[source,bash]
+----
+./mvnw clean package -Dquarkus.container-image.push=true
+----
+
+.Alternative to jib (do not use)
+[%collapsible]
+====
+[source,bash]
+----
+#docker tag 22c42a7b1261 localhost:5000/containers
+docker tag stuetz/containers:1.0-SNAPSHOT localhost:5000/containers
+docker push localhost:5000/containers
+----
+====
+
+.Webpage
+http://localhost:5000/v2/_catalog
+
+image:k8s-registry-catalog.png[]
+
+
+=== Change to Docker-Plugin from Jib-Plugin
+
+.pom.xml
+[source,xml]
+----
+...
+<version>1.0.1-SNAPSHOT</version>
+...
+<dependency>
+  <groupId>io.quarkus</groupId>
+  <artifactId>quarkus-container-image-docker</artifactId> // <.>
+</dependency>
+...
+----
+
+<.> replace `quarkus-container-image-jib` with `quarkus-container-image-docker`
+
+.It's also working, like with Jib
+[source,bash]
+----
+./mvnw clean package -Dquarkus.container-image.build=true
+./mvnw clean package -Dquarkus.container-image.push=true
+----
+
+image:k8s-list-images-in-registry.png[]
+
+http://localhost:5000/v2/stuetz/containers/tags/list
+
+image:k8s-list-tags-in-registry.png[]
+
+.http :5000/v2/_catalog
+image:k8s-list-images-in-registry-httpie.png[]
+
+.http :5000/v2/stuetz/containers/tags/list
+image:k8s-list-tags-in-registry-httpie.png[]
+
+=== Further Links
+
+* https://blog.codecentric.de/2018/07/docker-images-google-jib-kaniko/[Docker Images sicher bauen mit Google Jib & Kaniko, window="_blank"]
+* https://cloud.google.com/java/getting-started/jib?hl=de[Java-Container mit Jib erstellen,window="_blank"]
+
+
+
+
+
+
+
+
+
+

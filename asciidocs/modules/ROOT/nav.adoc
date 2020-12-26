@@ -1,0 +1,4 @@
+* xref:index.adoc[Quarkus]
+** xref:rest-introduction.adoc[REST Introduction]
+** xref:rest-entity.adoc[REST Entity]
+** xref:jpa.adoc[JPA]

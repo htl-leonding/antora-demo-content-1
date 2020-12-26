@@ -1,0 +1,239 @@
+== Websockets
+
+https://quarkus.io/guides/websockets[Quarkus - Using WebSockets, window="_blank"]
+
+=== Add Dependency to pom.xml
+
+.add dependency to pom.xml
+[source,bash]
+----
+./mvnw quarkus:add-extension -Dextensions="undertow-websockets"
+----
+
+=== Implement Server
+
+.src/main/java/at/htl/vehicle/boundary/ChatSocket.java
+[source,java]
+----
+package at.htl.vehicle.boundary;
+
+import javax.enterprise.context.ApplicationScoped;
+import javax.websocket.*;
+import javax.websocket.server.PathParam;
+import javax.websocket.server.ServerEndpoint;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+@ServerEndpoint("/chat/{username}")
+@ApplicationScoped
+public class ChatSocket {
+
+    Map<String, Session> sessions = new ConcurrentHashMap<>();
+
+    @OnOpen
+    public void onOpen(Session session, @PathParam("username") String username) {
+        sessions.put(username, session);
+        broadcast("User " + username + " joined");
+    }
+
+    @OnClose
+    public void onClose(Session session, @PathParam("username") String username) {
+        sessions.remove(username);
+        broadcast("User " + username + " left");
+    }
+
+    @OnError
+    public void onError(Session session, @PathParam("username") String username, Throwable throwable) {
+        sessions.remove(username);
+        broadcast("User " + username + " left on error: " + throwable);
+    }
+
+    @OnMessage
+    public void onMessage(String message, @PathParam("username") String username) {
+        broadcast(">> " + username + ": " + message);
+    }
+
+    private void broadcast(String message) {
+        sessions.values().forEach(s -> {
+            s.getAsyncRemote().sendObject(message, result ->  {  // <.>
+                if (result.getException() != null) {
+                    System.out.println("Unable to send message: " + result.getException());
+                }
+            });
+        });
+    }
+
+}
+----
+
+<.> beside the getAsyncRemote()-method is also a synchronous getBasicremote()-method available
+
+=== Client - Browser-Extension
+
+* https://addons.mozilla.org/en-US/firefox/addon/simple-websocket-client/?src=search[Simple WebSocket Client for Firefox, window="_blank"]
+* https://chrome.google.com/extensions/detail/pfdhoblngboilpfeibdedpjgfnlcodoo[Simple WebSocket Client for Chrome, window="_blank"]
+
+image::websocket-browser-1.png[]
+image::websocket-browser-2.png[]
+
+=== Client - html-page
+
+.src/main/resources/META-INF/resources/index.html
+[source,html]
+----
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Quarkus Chat!</title>
+    <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/patternfly/3.24.0/css/patternfly.min.css">
+    <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/patternfly/3.24.0/css/patternfly-additions.min.css">
+
+    <style>
+        #chat {
+            resize: none;
+            overflow: hidden;
+            min-height: 300px;
+            max-height: 300px;
+        }
+    </style>
+</head>
+
+<body>
+<nav class="navbar navbar-default navbar-pf" role="navigation">
+    <div class="navbar-header">
+        <a class="navbar-brand" href="/">
+            <p><strong>>> Quarkus Chat!</strong></p>
+        </a>
+    </div>
+</nav>
+<div class="container">
+    <br/>
+    <div class="row">
+        <input id="name" class="col-md-4" type="text" placeholder="your name">
+        <button id="connect" class="col-md-1 btn btn-primary" type="button">connect</button>
+        <br/>
+        <br/>
+    </div>
+    <div class="row">
+          <textarea class="col-md-8" id="chat">
+            </textarea>
+    </div>
+    <div class="row">
+        <input class="col-md-6" id="msg" type="text" placeholder="enter your message">
+        <button class="col-md-1 btn btn-primary" id="send" type="button" disabled>send</button>
+    </div>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/patternfly/3.24.0/js/patternfly.min.js"></script>
+
+<script type="text/javascript">
+    var connected = false;
+    var socket;
+
+    $( document ).ready(function() {
+        $("#connect").click(connect);
+        $("#send").click(sendMessage);
+
+        $("#name").keypress(function(event){
+            if(event.keyCode == 13 || event.which == 13) {
+                connect();
+            }
+        });
+
+        $("#msg").keypress(function(event) {
+            if(event.keyCode == 13 || event.which == 13) {
+                sendMessage();
+            }
+        });
+
+        $("#chat").change(function() {
+            scrollToBottom();
+        });
+
+        $("#name").focus();
+    });
+
+    var connect = function() {
+        if (! connected) {
+            var name = $("#name").val();
+            console.log("Val: " + name);
+            socket = new WebSocket("ws://" + location.host + "/chat/" + name);
+            socket.onopen = function() {
+                connected = true;
+                console.log("Connected to the web socket");
+                $("#send").attr("disabled", false);
+                $("#connect").attr("disabled", true);
+                $("#name").attr("disabled", true);
+                $("#msg").focus();
+            };
+            socket.onmessage =function(m) {
+                console.log("Got message: " + m.data);
+                $("#chat").append(m.data + "\n");
+                scrollToBottom();
+            };
+        }
+    };
+
+    var sendMessage = function() {
+        if (connected) {
+            var value = $("#msg").val();
+            console.log("Sending " + value);
+            socket.send(value);
+            $("#msg").val("");
+        }
+    };
+
+    var scrollToBottom = function () {
+        $('#chat').scrollTop($('#chat')[0].scrollHeight);
+    };
+
+</script>
+</body>
+
+</html>
+----
+
+image:websocket-html-1.png[]
+image:websocket-html-2.png[]
+
+=== Examples in the Web
+
+* https://rieckpil.de/create-real-time-applications-with-jakarta-ee-websocket/[Rieckpil - Create real-time applications with Jakarta EE WebSocket (w/ Json-Encoder and -Decoder), window="_blank"]
+* https://www.baeldung.com/java-websockets[Baeldung - A Guide to the Java API for WebSocket, window="_blank"]
+* https://www.openshift.com/blog/how-to-build-java-websocket-applications-using-the-jsr-356-api[WordGame, window="_blank"]
+* https://www.codeflow.site/de/article/java-websockets[Ein Handbuch zur Java-API für WebSocket, window="_blank"]
+
+=== Exercises
+
+* Create a quarkus application for chatting. +
+All sessions receiving a message get the prefix "<<<" in the log. +
+The session sending a message get the prefix ">>>" in the log.
+* Create a quarkus application with a websocket endpoint. +
+The server informes the client about goals netween team1 and team2. +
+Every client shows the result on his screen. +
+The communication is in Json.
+The client is wriiten in Java +
+When the client is a team1 follower then on the screen is printed "Hooray" when team1 scores else "It is a pity". +
+When the client is a team2 follwer the actions are vice versa.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
